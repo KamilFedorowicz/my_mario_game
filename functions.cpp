@@ -1,11 +1,24 @@
 #include "functions.h"
+#include "math_func.h"
 
 // Define the variables declared as extern in the header
 bool gameOver;
-int x, y, vy=0;
+int x, y, vy, xH, yH; //y=10 makes mario when the game starts
 int time_step=0;
 eDirection dir;
 int obstacles[width];
+int obstacleWidth=7; // how wide the obstacles are
+int lives = 3;
+
+
+void InitialiseObstacles()
+{
+    for (int i=0; i<width; i++)
+    {
+        obstacles[i] = 5;
+    }
+}
+
 
 void UpdateObstacles()
 {
@@ -13,8 +26,41 @@ void UpdateObstacles()
     {
         obstacles[i]=obstacles[i+1];
     }
-    obstacles[width-1]=rand()%3;
+    
+    //here we decide on the value of the last obstacle
+    //every obstacleWidth iterations, it will change a value
+    if( time_step%obstacleWidth==0) // change height every 5 time steps
+    {
+        int increment = (rand()%2==0) ? 2:-2; // increment obstacle by either +2 or -2
+        obstacles[width-1]=min(max(obstacles[width-2] + increment,0),10);
+    }
+    else
+    {
+        obstacles[width-1]=obstacles[width-2];
+    }
+    
 }
+
+void GenerateHearts()
+{
+    if (time_step%60==0)
+    {
+        xH = width;
+        yH=obstacles[width-1]+4;
+    }
+}
+
+void UpdateHearts()
+{
+    xH--;
+    if ( (xH==width/3 || xH==(width/3-1)|| xH==(width/3+1)) && (y==yH || y+1==yH))
+    {
+        lives++;
+        xH=-1;
+        yH=-1;
+    }
+}
+
 
 
 void Setup() {
@@ -22,7 +68,8 @@ void Setup() {
     gameOver = false;
     dir = STOP;
     x = width/3; //coordinate of legs
-    y = 1;
+    y = 15;
+    vy=0;
     
 }
 
@@ -47,9 +94,10 @@ void Draw() {
             }else if(i<obstacles[j])
             {
                 printw("X");
+            }else if (i==yH && j==xH)
+            {
+                printw("<3");
             }
-            
-            
             else
             {
                 printw(" ");
@@ -72,12 +120,13 @@ void Draw() {
     printw("\n");
 
     printw("\n");
-    printw("to move press: \n");
-    printw("left->a; right->d \n");
-    printw("up->w; down->s \n");
+    printw("to jump press: \n");
+    printw("q (high jump); w (low jump) \n");
     printw("time step: %d", time_step);
     printw("\n y: %d", y);
     printw("\n vy: %d", vy);
+    printw("\n lives: %d", lives);
+    
 
     
     refresh();
@@ -91,6 +140,9 @@ void Input() {
             case 'w':
                 dir = UP;
                 break;
+            case 'q':
+                dir = UP2;
+                break;
             case 'x':
                 gameOver=true;
                 break;
@@ -103,17 +155,6 @@ void Input() {
     }
 }
 
-int max(int a, int b)
-{
-    if (a>b)
-    {
-        return a;
-    }
-    else
-    {
-        return b;
-    }
-}
 
 void Jumps()
 {
@@ -140,6 +181,28 @@ void Jumps()
                     //y=max(y,1);
                 }
                 break;
+        case UP2:
+            if(y==obstacles[width/3]) //leg location
+            {
+                vy=4;
+                y+=vy;
+                
+            }
+            else
+            {
+                if(y>obstacles[width/3])
+                {
+                    vy--;
+                }
+                else
+                {
+                    vy=0;
+                }
+                y+=vy;
+                y = max(y,obstacles[width/3]);
+                //y=max(y,1);
+            }
+            break;
             
             default:
                 if(y>obstacles[width/3])
@@ -160,8 +223,19 @@ void IfDead()
 {
     if(y<obstacles[width/3])
     {
+        lives--;
+        Setup();
+    }
+    
+    if (lives<=0)
+    {
         gameOver=true;
     }
+}
+
+void IfGameOver()
+{
+    
 }
 
 void Logic() {
@@ -169,6 +243,8 @@ void Logic() {
     Jumps();
     UpdateObstacles();
     IfDead();
+    GenerateHearts();
+    UpdateHearts();
 
 
 }

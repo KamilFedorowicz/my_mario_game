@@ -19,15 +19,18 @@ int main(int argc, const char *argv[]) {
     srand(static_cast<unsigned int>(time(0))); // introduces randomness, in this case to the position of F
     Setup();
     
+    InitialiseObstacles();
 
     while (!gameOver) {
-
+        
+  
             Draw();
             Input();
             Logic();
             usleep(100000);
-        time_step++;
-        // Sleep for a short period to slow down the game loop
+            time_step++;
+            // Sleep for a short period to slow down the game loop
+        
     }
 
     endwin(); // End ncurses mode
